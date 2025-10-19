@@ -76,12 +76,6 @@ const Navbar = () => {
           <Link to="/chat" className="nav-link">AI Chat</Link>
           <Link to="/gallery" className="nav-link">Gallery</Link>
           <Link to="/email" className="nav-link">Email</Link>
-          <Link to="/admin" className="nav-link text-primary font-semibold">
-            Admin
-          </Link>
-          <Link to="/display" className="nav-link text-primary font-semibold">
-            Display
-          </Link>
           <Link to="/login">
             <Button variant="ghost" size="sm">Login</Button>
           </Link>
