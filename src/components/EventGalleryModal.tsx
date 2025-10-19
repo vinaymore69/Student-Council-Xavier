@@ -1,9 +1,22 @@
 import React, { useEffect, useState } from "react";
-import { X, ChevronLeft, ChevronRight, Download, Share2, ZoomIn } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
 
-const EventGalleryModal = ({ event, onClose }) => {
-  const [selectedImage, setSelectedImage] = useState(0);
-  const [isZoomed, setIsZoomed] = useState(false);
+interface Event {
+  id: number;
+  title: string;
+  date: string;
+  category: string;
+  gallery: string[];
+}
+
+interface EventGalleryModalProps {
+  event: Event;
+  onClose: () => void;
+}
+
+const EventGalleryModal: React.FC<EventGalleryModalProps> = ({ event, onClose }) => {
+  const [selectedImage, setSelectedImage] = useState<number>(0);
+  const [isZoomed, setIsZoomed] = useState<boolean>(false);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -22,7 +35,7 @@ const EventGalleryModal = ({ event, onClose }) => {
     setIsZoomed(false);
   };
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose();
     if (e.key === 'ArrowRight') nextImage();
     if (e.key === 'ArrowLeft') prevImage();
@@ -108,12 +121,12 @@ const EventGalleryModal = ({ event, onClose }) => {
         </div>
       </div>
 
-      {/* Bottom Thumbnail Grid - Improved Bento Style */}
+      {/* Bottom Thumbnail Grid */}
       <div 
         className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-black/80 to-transparent"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Image Counter & Actions */}
+        {/* Image Counter */}
         <div className="flex items-center justify-between mb-4">
           <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-full text-white text-sm font-medium">
             {selectedImage + 1} / {event.gallery.length}
@@ -151,7 +164,7 @@ const EventGalleryModal = ({ event, onClose }) => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
         }

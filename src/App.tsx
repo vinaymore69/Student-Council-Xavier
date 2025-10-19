@@ -11,7 +11,9 @@ import Contact from "./pages/Contact";
 import Chat from "./pages/Chat";
 import Gallery from "./pages/Gallery";
 import EmailPage from "./pages/EmailPage";
+import AuthCallback from "./pages/AuthCallback";
 import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -22,14 +24,34 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          {/* Public Routes */}
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/chat" element={<Chat />} />
           <Route path="/gallery" element={<Gallery />} />
-          <Route path="/email" element={<EmailPage />} />
+          
+          {/* Auth Callback Route */}
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          
+          {/* Protected Routes - Require Authentication */}
+          <Route 
+            path="/chat" 
+            element={
+              <ProtectedRoute>
+                <Chat />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/email" 
+            element={
+              <ProtectedRoute requireAdmin>
+                <EmailPage />
+              </ProtectedRoute>
+            } 
+          />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
@@ -39,4 +61,4 @@ const App = () => (
   </QueryClientProvider>
 );
 
-export default App; 
+export default App;

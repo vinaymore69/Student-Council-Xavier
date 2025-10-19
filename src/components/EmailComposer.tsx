@@ -2,18 +2,44 @@ import React, { useState } from "react";
 import { Paperclip, Calendar, Send, Clock, X } from "lucide-react";
 import { toast } from "sonner";
 
-const EmailComposer = ({ selectedRecipients, onSendEmail }) => {
-  const [subject, setSubject] = useState('');
-  const [description, setDescription] = useState('');
-  const [attachment, setAttachment] = useState(null);
-  const [attachmentBase64, setAttachmentBase64] = useState(null);
-  const [scheduleDate, setScheduleDate] = useState('');
-  const [scheduleTime, setScheduleTime] = useState('');
-  const [isScheduled, setIsScheduled] = useState(false);
-  const [isSending, setIsSending] = useState(false);
+interface Recipient {
+  name: string;
+  email: string;
+}
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
+interface Attachment {
+  name: string;
+  type: string;
+  size: number;
+  base64: string;
+}
+
+interface EmailData {
+  subject: string;
+  description: string;
+  attachment: Attachment | null;
+  recipients: Recipient[];
+  scheduledAt: string | null;
+  sentBy: string;
+}
+
+interface EmailComposerProps {
+  selectedRecipients: Recipient[];
+  onSendEmail: (emailData: EmailData) => Promise<void>;
+}
+
+const EmailComposer: React.FC<EmailComposerProps> = ({ selectedRecipients, onSendEmail }) => {
+  const [subject, setSubject] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [attachmentBase64, setAttachmentBase64] = useState<string | null>(null);
+  const [scheduleDate, setScheduleDate] = useState<string>('');
+  const [scheduleTime, setScheduleTime] = useState<string>('');
+  const [isScheduled, setIsScheduled] = useState<boolean>(false);
+  const [isSending, setIsSending] = useState<boolean>(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
       if (file.size > 10 * 1024 * 1024) { // 10MB limit
         toast.error("File size should be less than 10MB");
@@ -24,7 +50,7 @@ const EmailComposer = ({ selectedRecipients, onSendEmail }) => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setAttachment(file);
-        setAttachmentBase64(reader.result);
+        setAttachmentBase64(reader.result as string);
         toast.success(`File "${file.name}" attached successfully`);
       };
       reader.readAsDataURL(file);
@@ -37,7 +63,7 @@ const EmailComposer = ({ selectedRecipients, onSendEmail }) => {
     toast.info("Attachment removed");
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (selectedRecipients.length === 0) {
@@ -57,10 +83,10 @@ const EmailComposer = ({ selectedRecipients, onSendEmail }) => {
 
     setIsSending(true);
 
-    const emailData = {
+    const emailData: EmailData = {
       subject,
       description,
-      attachment: attachment ? {
+      attachment: attachment && attachmentBase64 ? {
         name: attachment.name,
         type: attachment.type,
         size: attachment.size,

@@ -1,8 +1,35 @@
 import React, { useEffect, useRef } from "react";
-import { Calendar, MapPin, Users, Clock, Eye } from "lucide-react";
+import { Calendar, Users, Eye } from "lucide-react";
 
-const EventCard = ({ event, index, onClick }) => {
-  const cardRef = useRef(null);
+interface Event {
+  id: number;
+  title: string;
+  date: string;
+  category: string;
+  categoryIcon?: string;
+  description: string;
+  image: string;
+  gallery: string[];
+  participants: string;
+  status: 'active' | 'upcoming';
+  year: number;
+}
+
+interface EventCardProps {
+  event: Event;
+  index: number;
+  onClick: (event: Event) => void;
+}
+
+interface EventsListProps {
+  events: Event[];
+  selectedCategory: string;
+  selectedYear: number;
+  onEventClick: (event: Event) => void;
+}
+
+const EventCard: React.FC<EventCardProps> = ({ event, index, onClick }) => {
+  const cardRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -78,7 +105,7 @@ const EventCard = ({ event, index, onClick }) => {
         </div>
       </div>
 
-      {/* Content - Shows on Hover for small cards, always visible for large */}
+      {/* Content */}
       <div className={`
         absolute inset-0 p-6 flex flex-col justify-end
         ${!isLarge && 'translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100'}
@@ -123,7 +150,7 @@ const EventCard = ({ event, index, onClick }) => {
   );
 };
 
-const EventsList = ({ events, selectedCategory, selectedYear, onEventClick }) => {
+const EventsList: React.FC<EventsListProps> = ({ events, selectedCategory, selectedYear, onEventClick }) => {
   const filteredEvents = events.filter(event => {
     const categoryMatch = selectedCategory === 'all' || event.category.toLowerCase() === selectedCategory;
     const yearMatch = event.year === selectedYear;

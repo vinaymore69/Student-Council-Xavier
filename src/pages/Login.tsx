@@ -1,37 +1,167 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
+import { supabase } from '@/lib/supabaseClient';
+import { AlertCircle, Mail } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-const Login = () => {
+const Login: React.FC = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showResendVerification, setShowResendVerification] = useState(false);
+  const [resendingEmail, setResendingEmail] = useState(false);
   const { toast } = useToast();
+
+  const handleResendVerification = async () => {
+    setResendingEmail(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Verification email sent!",
+        description: "Please check your inbox and spam folder.",
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to resend email",
+        description: error instanceof Error ? error.message : "Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setResendingEmail(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setShowResendVerification(false);
 
-    // Placeholder for future authentication logic
-    setTimeout(() => {
-      toast({
-        title: "Login functionality not yet connected",
-        description: "Backend authentication needs to be set up first.",
+    try {
+      // Sign in with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
+
+      if (authError) {
+        // Check if error is due to unconfirmed email
+        if (authError.message.includes('Email not confirmed')) {
+          setShowResendVerification(true);
+          throw new Error('Please verify your email address before logging in. Check your inbox for the verification link.');
+        }
+        throw authError;
+      }
+
+      console.log('Auth successful:', authData);
+
+      // Check if user is a student or admin
+      const { data: studentData, error: studentError } = await (supabase
+        .from('students') as any)
+        .select('*')
+        .eq('auth_id', authData.user.id)
+        .single();
+
+      if (studentData && !studentError) {
+        // User is a student
+        toast({
+          title: "Welcome back!",
+          description: `Logged in as ${studentData.name}`,
+        });
+        
+        // Store user info in localStorage
+        localStorage.setItem('userRole', 'student');
+        localStorage.setItem('userData', JSON.stringify(studentData));
+        
+        // Redirect to home (per request)
+        setTimeout(() => navigate('/'), 1000);
+        return;
+      }
+
+      // Check if user is an admin
+      const { data: adminData, error: adminError } = await (supabase
+        .from('admins') as any)
+        .select('*')
+        .eq('auth_id', authData.user.id)
+        .single();
+
+      if (adminData && !adminError) {
+        if (!adminData.is_active) {
+          // Admin exists but not activated yet
+          await supabase.auth.signOut();
+          toast({
+            title: "Account Pending Approval",
+            description: "Your admin account is pending approval. Please wait for activation.",
+            variant: "destructive"
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        // User is an active admin
+        toast({
+          title: "Welcome back, Admin!",
+          description: `Logged in as ${adminData.name}`,
+        });
+
+        // Store user info in localStorage
+        localStorage.setItem('userRole', 'admin');
+        localStorage.setItem('userData', JSON.stringify(adminData));
+
+        // Redirect to home (per request). Admin dashboard accessible from navbar.
+        setTimeout(() => navigate('/'), 1000);
+        return;
+      }
+
+      // User authenticated but no profile found
+      toast({
+        title: "Profile not found",
+        description: "Please complete your registration.",
+        variant: "destructive"
+      });
+      await supabase.auth.signOut();
+
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({
+        title: "Login failed",
+        description: error instanceof Error ? error.message : "Invalid email or password.",
+        variant: "destructive"
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
-  const handleGoogleLogin = () => {
-    toast({
-      title: "Google login not yet connected",
-      description: "Backend authentication needs to be set up first.",
-    });
+  const handleGoogleLogin = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        }
+      });
+
+      if (error) throw error;
+    } catch (error) {
+      toast({
+        title: "Google login failed",
+        description: error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -48,6 +178,28 @@ const Login = () => {
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
+            {/* Email Verification Alert */}
+            {showResendVerification && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Email Verification Required</AlertTitle>
+                <AlertDescription>
+                  <p className="mb-2">Please verify your email address before logging in.</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResendVerification}
+                    disabled={resendingEmail}
+                    className="w-full"
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    {resendingEmail ? 'Sending...' : 'Resend Verification Email'}
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -68,7 +220,15 @@ const Login = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={6}
               />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="text-sm">
+                <Link to="/forgot-password" className="text-primary hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">

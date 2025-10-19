@@ -1,15 +1,45 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Mail, Clock, CheckCircle, XCircle, Calendar, Users, Paperclip } from "lucide-react";
 
-const EmailHistory = ({ history }) => {
-  const [filter, setFilter] = useState('all');
+interface Recipient {
+  name: string;
+  email: string;
+}
+
+interface EmailAttachment {
+  name?: string;
+  size?: number;
+  type?: string;
+}
+
+interface EmailHistoryEntry {
+  id: number;
+  subject: string;
+  description: string;
+  recipients: Recipient[];
+  status: 'sent' | 'scheduled' | 'failed' | 'pending' | 'partial';
+  sentAt?: string;
+  scheduledAt?: string;
+  createdAt?: string;
+  sentBy?: string;
+  attachment?: string | EmailAttachment | null;
+}
+
+interface EmailHistoryProps {
+  history: EmailHistoryEntry[];
+}
+
+type FilterType = 'all' | 'sent' | 'scheduled' | 'failed' | 'pending' | 'partial';
+
+const EmailHistory: React.FC<EmailHistoryProps> = ({ history }) => {
+  const [filter, setFilter] = useState<FilterType>('all');
 
   const filteredHistory = history.filter(email => {
     if (filter === 'all') return true;
     return email.status === filter;
   });
 
-  const getStatusIcon = (status) => {
+  const getStatusIcon = (status: EmailHistoryEntry['status']) => {
     switch (status) {
       case 'sent':
         return <CheckCircle className="w-5 h-5 text-green-500" />;
@@ -22,8 +52,8 @@ const EmailHistory = ({ history }) => {
     }
   };
 
-  const getStatusBadge = (status) => {
-    const styles = {
+  const getStatusBadge = (status: EmailHistoryEntry['status']) => {
+    const styles: Record<EmailHistoryEntry['status'], string> = {
       sent: 'bg-green-100 text-green-700',
       scheduled: 'bg-blue-100 text-blue-700',
       failed: 'bg-red-100 text-red-700',
@@ -32,10 +62,21 @@ const EmailHistory = ({ history }) => {
     };
     
     return (
-      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${styles[status] || styles.pending}`}>
+      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${styles[status]}`}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     );
+  };
+
+  const getAttachmentName = (attachment: string | EmailAttachment | null | undefined): string => {
+    if (!attachment) return '';
+    if (typeof attachment === 'string') return attachment;
+    return attachment.name || 'Unknown file';
+  };
+
+  const getAttachmentSize = (attachment: string | EmailAttachment | null | undefined): number | null => {
+    if (!attachment || typeof attachment === 'string') return null;
+    return attachment.size || null;
   };
 
   return (
@@ -53,7 +94,7 @@ const EmailHistory = ({ history }) => {
         <div className="max-w-6xl mx-auto">
           {/* Filters */}
           <div className="flex flex-wrap gap-3 mb-6">
-            {['all', 'sent', 'scheduled', 'pending', 'failed', 'partial'].map((status) => (
+            {(['all', 'sent', 'scheduled', 'pending', 'failed', 'partial'] as FilterType[]).map((status) => (
               <button
                 key={status}
                 onClick={() => setFilter(status)}
@@ -102,25 +143,19 @@ const EmailHistory = ({ history }) => {
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Mail className="w-4 h-4 text-pulse-500" />
-                      <span>By: {email.sentBy}</span>
+                      <span>By: {email.sentBy || 'Unknown'}</span>
                     </div>
                   </div>
 
-                  {/* Attachment Display - FIXED */}
+                  {/* Attachment Display */}
                   {email.attachment && (
                     <div className="mt-4 pt-4 border-t border-gray-100">
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Paperclip className="w-4 h-4 text-pulse-500" />
-                        <span>
-                          Attachment: {
-                            typeof email.attachment === 'string' 
-                              ? email.attachment 
-                              : email.attachment.name || 'Unknown file'
-                          }
-                        </span>
-                        {typeof email.attachment === 'object' && email.attachment.size && (
+                        <span>Attachment: {getAttachmentName(email.attachment)}</span>
+                        {getAttachmentSize(email.attachment) && (
                           <span className="text-xs text-gray-500">
-                            ({(email.attachment.size / 1024).toFixed(2)} KB)
+                            ({(getAttachmentSize(email.attachment)! / 1024).toFixed(2)} KB)
                           </span>
                         )}
                       </div>

@@ -1,23 +1,73 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { supabase } from '@/lib/supabaseClient';
 
-const Signup = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+interface FormData {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  collegeMail: string;
+  gender: string;
+  phoneNo: string;
+  department: string;
+  collegeId: string;
+}
+
+interface StudentData {
+  class: string;
+  division: string;
+  rollNo: string;
+  age: string;
+}
+
+type UserRole = 'student' | 'admin';
+
+const Signup: React.FC = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [userRole, setUserRole] = useState<UserRole>('student');
+  
+  const [formData, setFormData] = useState<FormData>({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    collegeMail: '',
+    gender: '',
+    phoneNo: '',
+    department: '',
+    collegeId: '',
+  });
+
+  const [studentData, setStudentData] = useState<StudentData>({
+    class: '',
+    division: '',
+    rollNo: '',
+    age: '',
+  });
+
+  const handleInputChange = (field: keyof FormData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleStudentInputChange = (field: keyof StudentData, value: string) => {
+    setStudentData(prev => ({ ...prev, [field]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (password !== confirmPassword) {
+    if (formData.password !== formData.confirmPassword) {
       toast({
         title: "Passwords don't match",
         description: "Please make sure your passwords match.",
@@ -26,28 +76,132 @@ const Signup = () => {
       return;
     }
 
+    if (formData.password.length < 6) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
 
-    // Placeholder for future authentication logic
-    setTimeout(() => {
+    try {
+      if (userRole === 'student') {
+        await handleStudentSignup();
+      } else {
+        await handleAdminSignup();
+      }
+    } catch (error) {
+      console.error('Signup error:', error);
       toast({
-        title: "Signup functionality not yet connected",
-        description: "Backend authentication needs to be set up first.",
+        title: "Signup failed",
+        description: error instanceof Error ? error.message : "An error occurred during signup.",
+        variant: "destructive"
       });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
-  const handleGoogleSignup = () => {
-    toast({
-      title: "Google signup not yet connected",
-      description: "Backend authentication needs to be set up first.",
+  const handleStudentSignup = async () => {
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: formData.email,
+      password: formData.password,
+      options: {
+        data: {
+          role: 'student',
+          name: formData.name,
+        }
+      }
     });
+
+    if (authError) throw authError;
+    if (!authData.user) throw new Error('User creation failed');
+
+    // Prepare student data
+    const studentRecord = {
+      auth_id: authData.user.id,
+      name: formData.name,
+      class: studentData.class,
+      division: studentData.division || null,
+      department: formData.department,
+      roll_no: studentData.rollNo,
+      college_id: formData.collegeId,
+      age: studentData.age ? parseInt(studentData.age) : null,
+      college_mail: formData.collegeMail,
+      gender: formData.gender,
+      phone_no: formData.phoneNo,
+      email: formData.email,
+    };
+
+    // Insert with type bypass
+    const { error: insertError } = await (supabase
+      .from('students') as any)
+      .insert(studentRecord);
+
+    if (insertError) throw insertError;
+
+    toast({
+      title: "Account created successfully!",
+      description: "Please check your email to verify your account.",
+    });
+
+    setTimeout(() => navigate('/login'), 2000);
+  };
+
+  const handleAdminSignup = async () => {
+    // Prepare admin request data
+    const adminRequest = {
+      name: formData.name,
+      department: formData.department || null,
+      college_id: formData.collegeId,
+      college_mail: formData.collegeMail,
+      gender: formData.gender,
+      phone_no: formData.phoneNo,
+      email: formData.email,
+      password_hash: formData.password,
+      status: 'pending',
+    };
+
+    // Insert with type bypass
+    const { error: requestError } = await (supabase
+      .from('admin_requests') as any)
+      .insert(adminRequest);
+
+    if (requestError) throw requestError;
+
+    toast({
+      title: "Admin request submitted!",
+      description: "Your request is pending approval. You'll be notified once it's reviewed.",
+    });
+
+    setTimeout(() => navigate('/'), 2000);
+  };
+
+  const handleGoogleSignup = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        }
+      });
+
+      if (error) throw error;
+    } catch (error) {
+      toast({
+        title: "Google signup failed",
+        description: error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-2xl">
         <CardHeader className="space-y-1">
           <div className="flex justify-center mb-4">
             <img src="/logo.svg" alt="Logo" className="h-12" />
@@ -59,48 +213,204 @@ const Signup = () => {
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
+            {/* Role Selection */}
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+              <Label>I am a</Label>
+              <RadioGroup value={userRole} onValueChange={(value) => setUserRole(value as UserRole)} className="flex gap-4">
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="student" id="student" />
+                  <Label htmlFor="student">Student</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="admin" id="admin" />
+                  <Label htmlFor="admin">Admin</Label>
+                </div>
+              </RadioGroup>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
+
+            <Separator />
+
+            {/* Common Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name *</Label>
+                <Input
+                  id="name"
+                  placeholder="John Doe"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="department">Department *</Label>
+                <Input
+                  id="department"
+                  placeholder="Computer Science"
+                  value={formData.department}
+                  onChange={(e) => handleInputChange('department', e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="collegeId">College ID *</Label>
+                <Input
+                  id="collegeId"
+                  placeholder="CS2024001"
+                  value={formData.collegeId}
+                  onChange={(e) => handleInputChange('collegeId', e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="collegeMail">College Email *</Label>
+                <Input
+                  id="collegeMail"
+                  type="email"
+                  placeholder="student@college.edu"
+                  value={formData.collegeMail}
+                  onChange={(e) => handleInputChange('collegeMail', e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Personal Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="name@example.com"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phoneNo">Phone Number *</Label>
+                <Input
+                  id="phoneNo"
+                  type="tel"
+                  placeholder="+91 9876543210"
+                  value={formData.phoneNo}
+                  onChange={(e) => handleInputChange('phoneNo', e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="gender">Gender *</Label>
+                <Select value={formData.gender} onValueChange={(value) => handleInputChange('gender', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Student-specific fields */}
+              {userRole === 'student' && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="class">Class *</Label>
+                    <Input
+                      id="class"
+                      placeholder="FE / SE / TE / BE"
+                      value={studentData.class}
+                      onChange={(e) => handleStudentInputChange('class', e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="division">Division</Label>
+                    <Input
+                      id="division"
+                      placeholder="A / B / C (Optional)"
+                      value={studentData.division}
+                      onChange={(e) => handleStudentInputChange('division', e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="rollNo">Roll Number *</Label>
+                    <Input
+                      id="rollNo"
+                      placeholder="2024001"
+                      value={studentData.rollNo}
+                      onChange={(e) => handleStudentInputChange('rollNo', e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="age">Age *</Label>
+                    <Input
+                      id="age"
+                      type="number"
+                      placeholder="18"
+                      min="16"
+                      max="100"
+                      value={studentData.age}
+                      onChange={(e) => handleStudentInputChange('age', e.target.value)}
+                      required
+                    />
+                  </div>
+                </>
+              )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="••••••••"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                minLength={6}
-              />
+
+            {/* Password Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="password">Password *</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange('password', e.target.value)}
+                  required
+                  minLength={6}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.confirmPassword}
+                  onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                  required
+                  minLength={6}
+                />
+              </div>
             </div>
+
+            {userRole === 'admin' && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-md">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  <strong>Note:</strong> Admin registrations require approval. Your request will be pending until reviewed by an existing admin.
+                </p>
+              </div>
+            )}
           </CardContent>
+
           <CardFooter className="flex flex-col space-y-4">
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Creating account..." : "Create account"}
+              {isLoading ? "Processing..." : userRole === 'admin' ? "Submit Request" : "Create Account"}
             </Button>
             
-            <div className="relative">
+            <div className="relative w-full">
               <Separator />
               <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
                 OR

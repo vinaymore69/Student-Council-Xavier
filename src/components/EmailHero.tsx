@@ -1,7 +1,7 @@
 import React from "react";
 import { Mail } from "lucide-react";
 
-const EmailHero = () => {
+const EmailHero: React.FC = () => {
   return (
     <section className="w-full relative overflow-hidden bg-white pt-24 sm:pt-32 pb-12 sm:pb-16">
       <div className="container px-4 sm:px-6 lg:px-8 mx-auto">
