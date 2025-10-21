@@ -14,6 +14,30 @@ const Navbar = () => {
   const navigate = useNavigate();
   const profileRef = useRef<HTMLDivElement | null>(null);
 
+  // Function to load user data from localStorage
+  const loadUserData = () => {
+    try {
+      const role = localStorage.getItem('userRole');
+      const data = localStorage.getItem('userData');
+      
+      console.log('Loading user data - Role:', role); // Debug log
+      console.log('Loading user data - Data:', data); // Debug log
+      
+      setUserRole(role);
+      if (data) {
+        const parsedData = JSON.parse(data);
+        console.log('Parsed user data:', parsedData); // Debug log
+        setUserData(parsedData);
+      } else {
+        setUserData(null);
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+      setUserData(null);
+      setUserRole(null);
+    }
+  };
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -25,41 +49,51 @@ const Navbar = () => {
 
   // Load auth info from localStorage on mount
   useEffect(() => {
-    const role = localStorage.getItem('userRole');
-    const data = localStorage.getItem('userData');
-    setUserRole(role);
-    try {
-      setUserData(data ? JSON.parse(data) : null);
-    } catch {
-      setUserData(null);
-    }
+    console.log('Navbar mounted, loading user data...'); // Debug log
+    loadUserData();
+
+    // Listen for custom login event (for admin login)
+    const handleUserLogin = () => {
+      console.log('userLogin event received'); // Debug log
+      // Add a small delay to ensure localStorage is updated
+      setTimeout(() => {
+        loadUserData();
+      }, 100);
+    };
+
+    // Listen for storage events (changes in other tabs)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'userRole' || e.key === 'userData') {
+        console.log('Storage changed:', e.key); // Debug log
+        loadUserData();
+      }
+    };
+
+    window.addEventListener('userLogin', handleUserLogin);
+    window.addEventListener('storage', handleStorageChange);
 
     // Listen for auth state changes to clear UI (e.g., sign out elsewhere)
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      // If session is null, the user was signed out or deleted — clear local user state.
-      if (!session) {
+      console.log('Auth state changed:', event, session); // Debug log
+      
+      // If session is null and user is a student, clear local user state
+      if (!session && userRole === 'student') {
         setUserRole(null);
         setUserData(null);
         localStorage.removeItem('userRole');
         localStorage.removeItem('userData');
-        // Close profile & mobile menus
         setIsProfileOpen(false);
         setIsMenuOpen(false);
       }
-      // On sign in we can reload localStorage values (if other tabs updated it)
+      // On sign in reload localStorage values
       if (event === 'SIGNED_IN') {
-        const r = localStorage.getItem('userRole');
-        const d = localStorage.getItem('userData');
-        setUserRole(r);
-        try {
-          setUserData(d ? JSON.parse(d) : null);
-        } catch {
-          setUserData(null);
-        }
+        loadUserData();
       }
     });
 
     return () => {
+      window.removeEventListener('userLogin', handleUserLogin);
+      window.removeEventListener('storage', handleStorageChange);
       if (listener?.subscription) listener.subscription.unsubscribe();
     };
   }, []);
@@ -104,7 +138,10 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      // Only sign out from Supabase Auth if user is a student
+      if (userRole === 'student') {
+        await supabase.auth.signOut();
+      }
     } catch (err) {
       console.error('Logout error', err);
     } finally {
@@ -120,6 +157,9 @@ const Navbar = () => {
   };
 
   const profileName = userData?.name || userData?.email || 'Profile';
+
+  // Debug render
+  console.log('Navbar rendering - userRole:', userRole, 'userData:', userData);
 
   return (
     <header
@@ -156,7 +196,6 @@ const Navbar = () => {
           <Link to="/contact" className="nav-link">Contact</Link>
           <Link to="/chat" className="nav-link">AI Chat</Link>
           <Link to="/gallery" className="nav-link">Gallery</Link>
-          {/* <Link to="/email" className="nav-link">Email</Link> */}
 
           {/* If user is not signed in show Login / Sign Up */}
           {!userRole && (
@@ -199,14 +238,14 @@ const Navbar = () => {
                     </Link>
                   )}
                   {userRole === 'admin' && (
-                    <Link
-                      to="/admin"
-                      className="block px-4 py-2 text-sm hover:bg-gray-100"
-                      onClick={() => setIsProfileOpen(false)}
-                    >
-                      Admin Dashboard
-                    </Link>
-                  )}
+                  <Link
+                    to="/admin"  // Changed from /admindashboard
+                    className="block px-4 py-2 text-sm hover:bg-gray-100"
+                    onClick={() => setIsProfileOpen(false)}
+                  >
+                    Admin Dashboard
+                  </Link>
+                )}
 
                   <button
                     onClick={handleLogout}
@@ -272,26 +311,19 @@ const Navbar = () => {
           >
             Gallery
           </Link>
-          <Link 
-            to="/email" 
-            className="text-xl font-medium py-3 px-6 w-full text-center rounded-lg hover:bg-gray-100" 
-            onClick={closeMenu}
-          >
-            Email
-          </Link>
 
           {/* Authenticated links */}
           {userRole && (
             <>
               {userRole === 'admin' && (
-                <Link 
-                  to="/admin" 
-                  className="text-xl font-bold py-3 px-6 w-full text-center rounded-lg hover:bg-primary/10 text-primary" 
-                  onClick={closeMenu}
-                >
-                  🎯 Admin Dashboard
-                </Link>
-              )}
+  <Link 
+    to="/admin"  // Changed from /admindashboard
+    className="text-xl font-bold py-3 px-6 w-full text-center rounded-lg hover:bg-primary/10 text-primary" 
+    onClick={closeMenu}
+  >
+    🎯 Admin Dashboard
+  </Link>
+)}
               {userRole === 'student' && (
                 <Link 
                   to="/dashboard" 
