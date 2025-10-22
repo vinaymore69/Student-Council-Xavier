@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![XIE Banner](public/images/banner.png)
+![XIE Banner](https://github.com/vinaymore69/Student-Council-Xavier/blob/master/public/Header-background.webp)
 
 ![XIE Logo](https://img.shields.io/badge/XIE-Student%20Council-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)
