@@ -5,12 +5,18 @@ import { supabase } from '@/lib/supabaseClient';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
+  requireStudent?: boolean;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin = false }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
+  children, 
+  requireAdmin = false,
+  requireStudent = false 
+}) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isStudent, setIsStudent] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -26,6 +32,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin 
           console.log('Admin authenticated via localStorage'); // Debug
           setIsAuthenticated(true);
           setIsAdmin(true);
+          setIsStudent(false);
           setIsLoading(false);
           return;
         }
@@ -38,6 +45,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin 
             console.log('Student authenticated via Supabase session'); // Debug
             setIsAuthenticated(true);
             setIsAdmin(false);
+            setIsStudent(true);
             setIsLoading(false);
             return;
           } else {
@@ -65,19 +73,36 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin 
           if (adminData && adminData.is_active) {
             console.log('User is admin from database'); // Debug
             setIsAdmin(true);
+            setIsStudent(false);
           } else {
-            console.log('User is student from session'); // Debug
-            setIsAdmin(false);
+            // Check if user is student in database
+            const { data: studentData } = await supabase
+              .from('students')
+              .select('*')
+              .eq('auth_id', session.user.id)
+              .single();
+            
+            if (studentData) {
+              console.log('User is student from database'); // Debug
+              setIsAdmin(false);
+              setIsStudent(true);
+            } else {
+              console.log('User authenticated but no role found'); // Debug
+              setIsAdmin(false);
+              setIsStudent(false);
+            }
           }
         } else {
           console.log('No authentication found'); // Debug
           setIsAuthenticated(false);
           setIsAdmin(false);
+          setIsStudent(false);
         }
       } catch (error) {
         console.error('Auth check error:', error);
         setIsAuthenticated(false);
         setIsAdmin(false);
+        setIsStudent(false);
       } finally {
         setIsLoading(false);
       }
@@ -97,7 +122,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin 
     );
   }
 
-  console.log('ProtectedRoute Result - Auth:', isAuthenticated, 'Admin:', isAdmin, 'Require Admin:', requireAdmin); // Debug
+  console.log('ProtectedRoute Result - Auth:', isAuthenticated, 'Admin:', isAdmin, 'Student:', isStudent, 'Require Admin:', requireAdmin, 'Require Student:', requireStudent); // Debug
 
   if (!isAuthenticated) {
     console.log('❌ Not authenticated - Redirecting to login'); // Debug
@@ -106,6 +131,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin 
 
   if (requireAdmin && !isAdmin) {
     console.log('❌ Admin required but user is not admin - Redirecting to home'); // Debug
+    return <Navigate to="/" replace />;
+  }
+
+  if (requireStudent && !isStudent) {
+    console.log('❌ Student required but user is not student - Redirecting to home'); // Debug
     return <Navigate to="/" replace />;
   }
 

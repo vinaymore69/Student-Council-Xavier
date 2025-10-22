@@ -196,6 +196,7 @@ const Navbar = () => {
           <Link to="/contact" className="nav-link">Contact</Link>
           <Link to="/chat" className="nav-link">AI Chat</Link>
           <Link to="/gallery" className="nav-link">Gallery</Link>
+          <Link to="/rankings" className="nav-link">Rankings</Link>
 
           {/* If user is not signed in show Login / Sign Up */}
           {!userRole && (
@@ -230,7 +231,7 @@ const Navbar = () => {
                   {/* Role-specific dashboard link */}
                   {userRole === 'student' && (
                     <Link
-                      to="/dashboard"
+                      to="/student-dashboard"
                       className="block px-4 py-2 text-sm hover:bg-gray-100"
                       onClick={() => setIsProfileOpen(false)}
                     >

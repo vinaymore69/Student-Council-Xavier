@@ -299,46 +299,74 @@ const [selectedEvent, setSelectedEvent] = useState<string>('all-events');
     }));
   };
 
-  const fetchStudentByEmail = async (email: string) => {
-    if (!email || !email.includes('@')) return;
+ const fetchStudentByEmail = async (email: string) => {
+  if (!email || !email.includes('@')) return;
 
-    try {
-      setFetchingStudent(true);
-      const { data, error } = await supabase
-        .from('students')
-        .select('name, email, roll_number, branch, year')
-        .eq('email', email.toLowerCase())
-        .single();
-
-      if (error) {
-        // Student not found
-        setStudentData(null);
-        toast({
-          title: "Student not found",
-          description: "No student found with this email. You can manually enter the name.",
-          variant: "default"
-        });
-        return;
-      }
-
-      setStudentData(data);
-      setFormData(prev => ({
-        ...prev,
-        winner_name: data.name
-      }));
-
-      toast({
-        title: "Student found",
-        description: `Found: ${data.name} (${data.roll_number})`
-      });
-    } catch (error: any) {
-      console.error('Error fetching student:', error);
-      setStudentData(null);
-    } finally {
-      setFetchingStudent(false);
+  try {
+    setFetchingStudent(true);
+    
+    // Normalize the email (trim whitespace and convert to lowercase)
+    const normalizedEmail = email.trim().toLowerCase();
+    
+    // Check if it's a college email or personal email
+    const isCollegeEmail = normalizedEmail.includes('@student.xavier.ac.in');
+    
+    let query = supabase
+      .from('students')
+      .select('name, email, college_mail, roll_no, department, class, division, college_id');
+    
+    // Search by college_mail if it's a college email, otherwise by personal email
+    if (isCollegeEmail) {
+      query = query.eq('college_mail', normalizedEmail);
+    } else {
+      query = query.eq('email', normalizedEmail);
     }
-  };
+    
+    const { data, error } = await query.single();
 
+    if (error) {
+      // Student not found
+      console.log('Student lookup error:', error);
+      setStudentData(null);
+      toast({
+        title: "Student not found",
+        description: `No student found with this ${isCollegeEmail ? 'college' : 'personal'} email. You can manually enter the name.`,
+        variant: "default"
+      });
+      return;
+    }
+
+    // Map the data to match your StudentData interface
+    const studentInfo = {
+      name: data.name,
+      email: data.college_mail, // Use college_mail as primary identifier
+      roll_number: data.roll_no,
+      branch: data.department,
+      year: parseInt(data.class) || new Date().getFullYear()
+    };
+
+    setStudentData(studentInfo);
+    setFormData(prev => ({
+      ...prev,
+      winner_name: data.name
+    }));
+
+    toast({
+      title: "✓ Student Found",
+      description: `${data.name} - Roll No: ${data.roll_no}`,
+    });
+  } catch (error: any) {
+    console.error('Error fetching student:', error);
+    setStudentData(null);
+    toast({
+      title: "Error",
+      description: "Failed to fetch student data. You can manually enter the name.",
+      variant: "destructive"
+    });
+  } finally {
+    setFetchingStudent(false);
+  }
+};
   const handleWinnerImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -819,13 +847,14 @@ const [selectedEvent, setSelectedEvent] = useState<string>('all-events');
                     <Loader2 className="animate-spin h-5 w-5 text-primary mt-2" />
                   )}
                 </div>
-                {studentData && (
-                  <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm">
-                    <p className="font-medium text-green-900">✓ Student Found</p>
-                    <p className="text-green-700">{studentData.name} - {studentData.roll_number}</p>
-                    <p className="text-green-600">{studentData.branch}, Year {studentData.year}</p>
-                  </div>
-                )}
+               {studentData && (
+  <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded text-sm">
+    <p className="font-medium text-green-900">✓ Student Found</p>
+    <p className="text-green-700 font-medium">{studentData.name}</p>
+    <p className="text-green-600">Roll No: {studentData.roll_number}</p>
+    <p className="text-green-600">{studentData.branch}</p>
+  </div>
+)}
               </div>
 
               <div className="col-span-2">
