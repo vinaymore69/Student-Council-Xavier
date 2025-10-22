@@ -1,7 +1,6 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Calendar, Users, Award } from "lucide-react";
 import LottieAnimation from "./LottieAnimation";
 
 const Hero = () => {
@@ -106,44 +105,85 @@ const Hero = () => {
               style={{ animationDelay: "0.1s" }}
             >
               <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-pulse-500 text-white mr-2">01</span>
-              <span>Purpose</span>
+              <span>Welcome</span>
             </div>
             
             <h1 
               className="section-title text-3xl sm:text-4xl lg:text-5xl xl:text-6xl leading-tight opacity-0 animate-fade-in" 
               style={{ animationDelay: "0.3s" }}
             >
-              Atlas: Where Code<br className="hidden sm:inline" />Meets Motion
+              Student Council<br className="hidden sm:inline" />
+              <span className="text-pulse-500">Xavier</span>
             </h1>
             
             <p 
               style={{ animationDelay: "0.5s" }} 
               className="section-subtitle mt-3 sm:mt-6 mb-4 sm:mb-8 leading-relaxed opacity-0 animate-fade-in text-gray-950 font-normal text-base sm:text-lg text-left"
             >
-              The humanoid companion that learns and adapts alongside you.
+              Your voice on campus. Empowering students, organizing events, and building a vibrant community together.
             </p>
+
+            {/* Quick Stats */}
+            <div 
+              className="grid grid-cols-3 gap-4 mb-6 sm:mb-8 opacity-0 animate-fade-in"
+              style={{ animationDelay: "0.6s" }}
+            >
+              <div className="text-center bg-white/80 backdrop-blur-sm rounded-xl p-3">
+                <Calendar className="w-6 h-6 text-pulse-500 mx-auto mb-1" />
+                <p className="text-2xl font-bold text-gray-900">50+</p>
+                <p className="text-xs text-gray-600">Events/Year</p>
+              </div>
+              <div className="text-center bg-white/80 backdrop-blur-sm rounded-xl p-3">
+                <Users className="w-6 h-6 text-pulse-500 mx-auto mb-1" />
+                <p className="text-2xl font-bold text-gray-900">2000+</p>
+                <p className="text-xs text-gray-600">Students</p>
+              </div>
+              <div className="text-center bg-white/80 backdrop-blur-sm rounded-xl p-3">
+                <Award className="w-6 h-6 text-pulse-500 mx-auto mb-1" />
+                <p className="text-2xl font-bold text-gray-900">15+</p>
+                <p className="text-xs text-gray-600">Council Members</p>
+              </div>
+            </div>
             
             <div 
               className="flex flex-col sm:flex-row gap-4 opacity-0 animate-fade-in" 
               style={{ animationDelay: "0.7s" }}
             >
               <a 
-                href="#get-access" 
+                href="#events" 
                 className="flex items-center justify-center group w-full sm:w-auto text-center" 
                 style={{
-                  backgroundColor: '#FE5C02',
+                  backgroundColor: 'black',
                   borderRadius: '1440px',
                   boxSizing: 'border-box',
                   color: '#FFFFFF',
                   cursor: 'pointer',
                   fontSize: '14px',
                   lineHeight: '20px',
-                  padding: '16px 24px', // Slightly reduced padding for mobile
-                  border: '1px solid white',
+                  padding: '16px 24px',
+                  border: '1px solid black',
                 }}
               >
-                Request Access
+                Explore Events
                 <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </a>
+              
+              <a 
+                href="#contact" 
+                className="flex items-center justify-center group w-full sm:w-auto text-center" 
+                style={{
+                  backgroundColor: 'transparent',
+                  borderRadius: '1440px',
+                  boxSizing: 'border-box',
+                  color: 'black',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  lineHeight: '20px',
+                  padding: '16px 24px',
+                  border: '2px solid black',
+                }}
+              >
+                Join the Council
               </a>
             </div>
           </div>
@@ -160,16 +200,16 @@ const Hero = () => {
               </div>
             ) : (
               <>
-              <div className="absolute inset-0 bg-dark-900 rounded-2xl sm:rounded-3xl -z-10 shadow-xl"></div>
+              <div className="absolute inset-0  rounded-2xl sm:rounded-3xl -z-10 shadow-xl"></div>
               <div className="relative transition-all duration-500 ease-out overflow-hidden rounded-2xl sm:rounded-3xl shadow-2xl">
                 <img 
                   ref={imageRef} 
-                  src="/lovable-uploads/5663820f-6c97-4492-9210-9eaa1a8dc415.png" 
-                  alt="Atlas Robot" 
+                  src="/StudentCouncilLogo.png" 
+                  alt="Student Council" 
                   className="w-full h-auto object-cover transition-transform duration-500 ease-out" 
                   style={{ transformStyle: 'preserve-3d' }} 
                 />
-                <div className="absolute inset-0" style={{ backgroundImage: 'url("/hero-image.jpg")', backgroundSize: 'cover', backgroundPosition: 'center', mixBlendMode: 'overlay', opacity: 0.5 }}></div>
+                <div className="absolute inset-0" style={{ backgroundImage: 'url("/StudentCouncilLogo.png")', backgroundSize: 'cover', backgroundPosition: 'center', mixBlendMode: 'overlay', opacity: 0.5 }}></div>
               </div>
               </>
             )}

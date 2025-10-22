@@ -49,33 +49,33 @@ const ValuesSection = () => {
   const values = [
     {
       icon: Zap,
-      title: "Innovation First",
-      description: "We constantly push the boundaries of what's possible with AI and robotics, pioneering new solutions that transform industries."
+      title: "Innovation & Creativity",
+      description: "We constantly explore new ideas and push boundaries to create events and initiatives that inspire and excite the entire campus community."
     },
     {
       icon: Users,
-      title: "Human-Centric Design",
-      description: "Every feature we build is designed with our users' needs at the forefront, ensuring intuitive and meaningful interactions."
+      title: "Inclusivity & Diversity",
+      description: "Every student deserves to be heard and represented. We celebrate diverse perspectives and ensure everyone has a seat at the table."
     },
     {
       icon: Target,
-      title: "Results Driven",
-      description: "We focus on delivering tangible value and measurable outcomes that make a real difference in people's lives."
+      title: "Student-Centric Approach",
+      description: "Students come first in every decision we make. We listen, understand, and act on what matters most to the campus community."
     },
     {
       icon: Award,
-      title: "Excellence",
-      description: "Quality and reliability are at the core of everything we create, from hardware to software to support."
+      title: "Excellence in Execution",
+      description: "From grand festivals to small workshops, we maintain the highest standards in planning and delivering exceptional experiences."
     },
     {
       icon: Heart,
-      title: "Ethical AI",
-      description: "We're committed to developing AI that is transparent, fair, and respects human dignity and privacy."
+      title: "Passion & Dedication",
+      description: "We're driven by genuine care for student welfare and a commitment to making Xavier the best place to learn and grow."
     },
     {
       icon: Shield,
-      title: "Safety First",
-      description: "Safety protocols and fail-safes are built into every system, ensuring secure operation in all environments."
+      title: "Transparency & Accountability",
+      description: "We operate with honesty and integrity, keeping students informed and taking responsibility for our actions and decisions."
     }
   ];
   
@@ -91,7 +91,7 @@ const ValuesSection = () => {
             What Drives Us Forward
           </h2>
           <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto opacity-0 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-            Our core principles guide every decision we make and every product we build.
+            Our core principles guide every event we organize and every decision we make for the student community.
           </p>
         </div>
         

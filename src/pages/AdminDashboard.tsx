@@ -11,7 +11,10 @@ import {
   Menu,
   X,
   Bell,
-  Search
+  Search,
+  Calendar,
+  Image,
+  Trophy
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -28,6 +31,11 @@ import {
   ReportsManagement,
   SettingsManagement
 } from '@/components/admin';
+
+// Import new Event components (we'll create these next)
+import EventsManagement from '@/components/admin/EventsManagement';
+import EventGallery from '@/components/admin/EventGallery';
+import EventWinners from '@/components/admin/EventWinners';
 
 interface SidebarItem {
   id: string;
@@ -50,6 +58,9 @@ const AdminDashboard: React.FC = () => {
     { id: 'students', label: 'Students', icon: <Users size={20} />, path: '/admin/students' },
     { id: 'admin-requests', label: 'Admin Requests', icon: <UserCheck size={20} />, path: '/admin/requests' },
     { id: 'email', label: 'Email Management', icon: <Mail size={20} />, path: '/admin/email' },
+    { id: 'events', label: 'Events Management', icon: <Calendar size={20} />, path: '/admin/events' },
+    { id: 'event-gallery', label: 'Event Gallery', icon: <Image size={20} />, path: '/admin/event-gallery' },
+    { id: 'event-winners', label: 'Event Winners', icon: <Trophy size={20} />, path: '/admin/event-winners' },
     { id: 'reports', label: 'Reports', icon: <FileText size={20} />, path: '/admin/reports' },
     { id: 'settings', label: 'Settings', icon: <Settings size={20} />, path: '/admin/settings' },
   ];
@@ -121,6 +132,12 @@ const AdminDashboard: React.FC = () => {
         return <AdminRequestsManagement onRequestUpdated={fetchNotifications} />;
       case 'email':
         return <EmailManagement />;
+      case 'events':
+        return <EventsManagement />;
+      case 'event-gallery':
+        return <EventGallery />;
+      case 'event-winners':
+        return <EventWinners />;
       case 'reports':
         return <ReportsManagement />;
       case 'settings':
@@ -207,7 +224,7 @@ const AdminDashboard: React.FC = () => {
       {/* Sidebar - Desktop */}
       <aside
         className={cn(
-          "fixed left-0 top-16 bottom-0 bg-white border-r border-gray-200 transition-all duration-300 z-20 hidden lg:block",
+          "fixed left-0 top-16 bottom-0 bg-white border-r border-gray-200 transition-all duration-300 z-20 hidden lg:block overflow-y-auto",
           isSidebarOpen ? "w-64" : "w-20"
         )}
       >
@@ -245,7 +262,7 @@ const AdminDashboard: React.FC = () => {
       {/* Sidebar - Mobile */}
       <aside
         className={cn(
-          "fixed left-0 top-16 bottom-0 bg-white border-r border-gray-200 w-64 transition-transform duration-300 z-20 lg:hidden",
+          "fixed left-0 top-16 bottom-0 bg-white border-r border-gray-200 w-64 transition-transform duration-300 z-20 lg:hidden overflow-y-auto",
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >

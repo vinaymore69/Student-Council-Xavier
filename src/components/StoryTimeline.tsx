@@ -59,34 +59,39 @@ const TimelineItem = ({ year, title, description, index, isLast }) => {
 const StoryTimeline = () => {
   const timeline = [
     {
+      year: "2019",
+      title: "The Foundation",
+      description: "Student Council Xavier was officially established to give students a unified voice and platform to shape campus life."
+    },
+    {
       year: "2020",
-      title: "The Beginning",
-      description: "Founded with a vision to bridge the gap between humans and AI. Started research on adaptive learning systems."
+      title: "First Virtual Fest",
+      description: "Adapted to the pandemic by organizing our first-ever virtual cultural fest, connecting students during challenging times."
     },
     {
       year: "2021",
-      title: "First Prototype",
-      description: "Developed our first humanoid prototype with basic movement and interaction capabilities."
+      title: "Expansion & Growth",
+      description: "Launched multiple new initiatives including mentorship programs, skill development workshops, and social responsibility projects."
     },
     {
       year: "2022",
-      title: "AI Integration",
-      description: "Successfully integrated advanced AI models, enabling natural language understanding and adaptive behavior."
+      title: "Spandan Reborn",
+      description: "Successfully organized Spandan, our flagship cultural festival, bringing together 2000+ students for three days of celebration."
     },
     {
       year: "2023",
-      title: "Beta Launch",
-      description: "Launched beta program with select partners across manufacturing, healthcare, and hospitality sectors."
+      title: "Tech Integration",
+      description: "Introduced digital platforms for event management, student feedback, and real-time announcements, making council operations more efficient."
     },
     {
       year: "2024",
-      title: "Global Expansion",
-      description: "Expanded operations to 15 countries, serving over 500 enterprises worldwide."
+      title: "Record-Breaking Year",
+      description: "Organized 50+ events, launched the council website, and achieved the highest student participation rate in Xavier's history."
     },
     {
       year: "2025",
-      title: "Atlas Release",
-      description: "Introduced Atlas, our most advanced humanoid robot with unprecedented dexterity and intelligence."
+      title: "Future Forward",
+      description: "Continuing to innovate with new event formats, enhanced student services, and stronger community connections across all departments."
     }
   ];
   
@@ -101,10 +106,10 @@ const StoryTimeline = () => {
               <span>Our Journey</span>
             </div>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-display font-bold mb-4">
-              The Story Behind Atlas
+              The Story of Student Council Xavier
             </h2>
             <p className="text-lg sm:text-xl text-gray-600">
-              From a bold idea to a revolutionary reality
+              From humble beginnings to a thriving student community
             </p>
           </div>
           

@@ -1,19 +1,42 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Calendar, Sparkles, ChevronDown } from "lucide-react";
 
-const EventFilters = ({ selectedCategory, setSelectedCategory, selectedYear, setSelectedYear }) => {
-  const [years] = useState([2025, 2024, 2023, 2022, 2021]);
-  const [isOpen, setIsOpen] = useState(false);
+interface EventFiltersProps {
+  selectedCategory: string;
+  setSelectedCategory: (category: string) => void;
+  selectedYear: number;
+  setSelectedYear: (year: number) => void;
+  availableYears: number[];
+}
+
+const EventFilters: React.FC<EventFiltersProps> = ({ 
+  selectedCategory, 
+  setSelectedCategory, 
+  selectedYear, 
+  setSelectedYear,
+  availableYears 
+}) => {
   const sectionRef = useRef(null);
   
   const categories = [
     { id: 'all', name: 'All Events', icon: '🎯', color: 'bg-gray-500' },
-    { id: 'cultural', name: 'Cultural', icon: '🎭', color: 'bg-purple-500' },
-    { id: 'technical', name: 'Technical', icon: '⚙️', color: 'bg-blue-500' },
-    { id: 'sports', name: 'Sports', icon: '⚽', color: 'bg-green-500' }
+    { id: 'Cultural', name: 'Cultural', icon: '🎭', color: 'bg-purple-500' },
+    { id: 'Technical', name: 'Technical', icon: '⚙️', color: 'bg-blue-500' },
+    { id: 'Sports', name: 'Sports', icon: '⚽', color: 'bg-green-500' }
   ];
 
   const selectedCategoryData = categories.find(c => c.id === selectedCategory);
+
+  // Use available years from props, or default to current year if empty
+  const currentYear = new Date().getFullYear();
+  const years = availableYears.length > 0 ? availableYears : [currentYear];
+
+  // Reset to available year if selected year is not in the list
+  useEffect(() => {
+    if (!years.includes(selectedYear) && years.length > 0) {
+      setSelectedYear(years[0]);
+    }
+  }, [years, selectedYear]);
 
   return (
     <section 

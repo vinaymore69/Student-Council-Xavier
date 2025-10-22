@@ -5,114 +5,181 @@ import GalleryHero from '@/components/GalleryHero';
 import EventFilters from '@/components/EventFilters';
 import EventsList from '@/components/EventsList';
 import EventGalleryModal from '@/components/EventGalleryModal';
+import { supabase } from '@/lib/supabaseClient';
+import { Loader2 } from 'lucide-react';
+
+interface EventData {
+  id: string;
+  event_name: string;
+  event_type: string;
+  event_category_name: string;
+  description: string;
+  banner_image_url: string;
+  date_time: string;
+  duration: string;
+  venue: string;
+  year: number;
+  status: string;
+  socials: any;
+  contact_details: any;
+  participants?: string;
+}
+
+interface GalleryImage {
+  id: string;
+  image_url: string;
+  sub_event_name: string;
+  caption: string;
+}
+
+interface ProcessedEvent {
+  id: string;
+  title: string;
+  category: string;
+  categoryIcon: string;
+  description: string;
+  date: string;
+  time: string;
+  location: string;
+  participants: string;
+  status: 'active' | 'upcoming' | 'completed';
+  year: number;
+  image: string;
+  gallery: string[];
+  socials: any;
+  contact_details: any;
+}
 
 const Gallery = () => {
   const currentYear = new Date().getFullYear();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedYear, setSelectedYear] = useState(currentYear);
-  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState<ProcessedEvent | null>(null);
+  const [events, setEvents] = useState<ProcessedEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Sample events data - Replace with your actual data
-  const eventsData = [
-    {
-      id: 1,
-      title: "Annual Tech Symposium 2025",
-      category: "Technical",
-      categoryIcon: "⚙️",
-      description: "A groundbreaking showcase of cutting-edge technology, featuring robotics demonstrations, AI workshops, and innovation challenges.",
-      date: "March 15, 2025",
-      time: "9:00 AM - 6:00 PM",
-      location: "Innovation Hub, Main Campus",
-      participants: "500+",
-      status: "active",
-      year: 2025,
-      image: "/lovable-uploads/c3d5522b-6886-4b75-8ffc-d020016bb9c2.png",
-      gallery: [
-        "/lovable-uploads/c3d5522b-6886-4b75-8ffc-d020016bb9c2.png",
-        "/background-section1.png",
-        "/background-section2.png",
-        "/background-section3.png"
-      ]
-    },
-    {
-      id: 2,
-      title: "Cultural Fest 2025",
-      category: "Cultural",
-      categoryIcon: "🎭",
-      description: "Experience the vibrant tapestry of diverse cultures through traditional performances, art exhibitions, and culinary delights from around the world.",
-      date: "April 22, 2025",
-      time: "10:00 AM - 8:00 PM",
-      location: "Central Auditorium",
-      participants: "800+",
-      status: "upcoming",
-      year: 2025,
-      image: "/background-section1.png",
-      gallery: [
-        "/background-section1.png",
-        "/background-section2.png",
-        "/background-section3.png",
-        "/lovable-uploads/c3d5522b-6886-4b75-8ffc-d020016bb9c2.png"
-      ]
-    },
-    {
-      id: 3,
-      title: "Inter-College Sports Championship",
-      category: "Sports",
-      categoryIcon: "⚽",
-      description: "The ultimate athletic competition featuring basketball, football, athletics, and more. Watch teams compete for glory and championship titles.",
-      date: "May 10-12, 2025",
-      time: "8:00 AM - 7:00 PM",
-      location: "Sports Complex",
-      participants: "1000+",
-      status: "upcoming",
-      year: 2025,
-      image: "/background-section2.png",
-      gallery: [
-        "/background-section2.png",
-        "/background-section3.png",
-        "/lovable-uploads/c3d5522b-6886-4b75-8ffc-d020016bb9c2.png",
-        "/background-section1.png"
-      ]
-    },
-    {
-      id: 4,
-      title: "Hackathon 2024",
-      category: "Technical",
-      categoryIcon: "⚙️",
-      description: "24-hour coding marathon where brilliant minds came together to build innovative solutions for real-world problems.",
-      date: "November 5-6, 2024",
-      time: "24 Hours",
-      location: "Tech Lab, Building A",
-      participants: "300+",
-      status: "completed",
-      year: 2024,
-      image: "/background-section3.png",
-      gallery: [
-        "/background-section3.png",
-        "/background-section1.png",
-        "/background-section2.png"
-      ]
-    },
-    {
-      id: 5,
-      title: "Diwali Celebration 2024",
-      category: "Cultural",
-      categoryIcon: "🎭",
-      description: "A magical evening of lights, music, and tradition celebrating the festival of Diwali with spectacular performances and fireworks.",
-      date: "October 24, 2024",
-      time: "6:00 PM - 10:00 PM",
-      location: "Open Ground",
-      participants: "1500+",
-      status: "completed",
-      year: 2024,
-      image: "/background-section1.png",
-      gallery: [
-        "/background-section1.png",
-        "/background-section3.png",
-        "/background-section2.png"
-      ]
+  // Fetch events and their gallery images
+  useEffect(() => {
+    fetchEventsWithGallery();
+  }, []);
+
+  const fetchEventsWithGallery = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch all events
+      const { data: eventsData, error: eventsError } = await supabase
+        .from('events')
+        .select('*')
+        .order('date_time', { ascending: false });
+
+      if (eventsError) throw eventsError;
+
+      if (!eventsData || eventsData.length === 0) {
+        setEvents([]);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch gallery images for all events
+      const processedEvents = await Promise.all(
+        eventsData.map(async (event: EventData) => {
+          // Fetch gallery images for this event
+          const { data: galleryData } = await supabase
+            .from('event_gallery')
+            .select('image_url, sub_event_name, caption')
+            .eq('event_id', event.id)
+            .order('uploaded_at', { ascending: false });
+
+          // Fetch winners count for participants
+          const { count: winnersCount } = await supabase
+            .from('event_winners')
+            .select('*', { count: 'exact', head: true })
+            .eq('event_id', event.id);
+
+          const gallery = galleryData ? galleryData.map((img: GalleryImage) => img.image_url) : [];
+          
+          // Add banner as first image if gallery is empty
+          if (gallery.length === 0 && event.banner_image_url) {
+            gallery.push(event.banner_image_url);
+          }
+
+          return processEvent(event, gallery, winnersCount || 0);
+        })
+      );
+
+      setEvents(processedEvents);
+    } catch (err: any) {
+      console.error('Error fetching events:', err);
+      setError(err.message || 'Failed to load events');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  const processEvent = (event: EventData, gallery: string[], winnersCount: number): ProcessedEvent => {
+    const categoryIcons: { [key: string]: string } = {
+      'Cultural': '🎭',
+      'Technical': '⚙️',
+      'Sports': '⚽',
+      'default': '🎯'
+    };
+
+    const formatDate = (dateString: string) => {
+      if (!dateString) return 'Date TBA';
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    };
+
+    const formatTime = (dateString: string) => {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    };
+
+    const determineStatus = (status: string, dateTime: string): 'active' | 'upcoming' | 'completed' => {
+      if (status === 'ongoing') return 'active';
+      if (status === 'upcoming') return 'upcoming';
+      if (status === 'completed') return 'completed';
+      
+      // Fallback: check date if status is not clear
+      if (dateTime) {
+        const eventDate = new Date(dateTime);
+        const now = new Date();
+        if (eventDate > now) return 'upcoming';
+        return 'completed';
+      }
+      
+      return 'upcoming';
+    };
+
+    return {
+      id: event.id,
+      title: event.event_name,
+      category: event.event_type,
+      categoryIcon: categoryIcons[event.event_type] || categoryIcons.default,
+      description: event.description || 'Join us for an amazing event!',
+      date: formatDate(event.date_time),
+      time: formatTime(event.date_time),
+      location: event.venue || 'Venue TBA',
+      participants: winnersCount > 0 ? `${winnersCount}+ Winners` : '100+ Participants',
+      status: determineStatus(event.status, event.date_time),
+      year: event.year,
+      image: event.banner_image_url || '/placeholder-event.jpg',
+      gallery: gallery.length > 0 ? gallery : [event.banner_image_url || '/placeholder-event.jpg'],
+      socials: event.socials,
+      contact_details: event.contact_details
+    };
+  };
 
   // Initialize intersection observer for scroll animations
   useEffect(() => {
@@ -134,15 +201,46 @@ const Gallery = () => {
     return () => {
       elements.forEach((el) => observer.unobserve(el));
     };
-  }, []);
+  }, [events]);
 
-  const handleEventClick = (event) => {
+  const handleEventClick = (event: ProcessedEvent) => {
     setSelectedEvent(event);
   };
 
   const handleCloseModal = () => {
     setSelectedEvent(null);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="animate-spin h-12 w-12 text-primary mx-auto mb-4" />
+          <p className="text-gray-600">Loading events gallery...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Navbar />
+        <div className="container mx-auto px-4 py-20 text-center">
+          <div className="text-red-500 mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Events</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button 
+            onClick={fetchEventsWithGallery}
+            className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -155,9 +253,10 @@ const Gallery = () => {
           setSelectedCategory={setSelectedCategory}
           selectedYear={selectedYear}
           setSelectedYear={setSelectedYear}
+          availableYears={Array.from(new Set(events.map(e => e.year))).sort((a, b) => b - a)}
         />
         <EventsList 
-          events={eventsData}
+          events={events}
           selectedCategory={selectedCategory}
           selectedYear={selectedYear}
           onEventClick={handleEventClick}

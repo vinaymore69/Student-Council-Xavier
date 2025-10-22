@@ -178,12 +178,12 @@ const Navbar = () => {
             e.preventDefault();
             scrollToTop();
           }}
-          aria-label="Pulse Robot"
+          aria-label="Xie Student Council Logo"
         >
           <img 
-            src="/logo.svg" 
-            alt="Pulse Robot Logo" 
-            className="h-7 sm:h-8" 
+            src="/xiesc.png" 
+            alt="Xie Student Council Logo" 
+            className="h-12 sm:h-16 " 
           />
         </a>
 

@@ -15,6 +15,9 @@ import AuthCallback from "./pages/AuthCallback";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
+import PrivacyPolicy from '@/pages/privacyPolicy';
+import TermsOfService from '@/pages/TermsOfService';
+import CookiePolicy from '@/pages/CookiePolicy';
 
 const queryClient = new QueryClient();
 
@@ -32,7 +35,10 @@ const App = () => (
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/gallery" element={<Gallery />} />
-          
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+<Route path="/terms" element={<TermsOfService />} />
+<Route path="/cookies" element={<CookiePolicy />} />
+
           {/* Auth Callback Route */}
           <Route path="/auth/callback" element={<AuthCallback />} />
           

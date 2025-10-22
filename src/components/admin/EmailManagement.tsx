@@ -24,7 +24,8 @@ import {
   Users,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  LinkIcon
 } from 'lucide-react';
 import {
   Select,
@@ -54,6 +55,9 @@ const EMAIL_CONFIG = {
   publicKey: 'wdUryE-n6It7hgomx'
 };
 
+// Server URL
+const SERVER_URL = 'http://localhost:3001';
+
 interface Student {
   id: string;
   name: string;
@@ -62,11 +66,14 @@ interface Student {
   department: string;
 }
 
-interface DriveFile {
+interface FileAttachment {
   fileId: string;
   fileName: string;
+  savedFileName: string;
   fileUrl: string;
   viewUrl: string;
+  downloadUrl: string;
+  filePath: string;
   mimeType: string;
   size: number;
 }
@@ -76,8 +83,9 @@ interface EmailRecord {
   subject: string;
   message: string;
   recipients: string[];
-  attachment?: DriveFile;
-  status: 'sent' | 'scheduled' | 'failed' | 'draft';
+  attachment?: FileAttachment;
+  attachment_path?: string;
+  status: 'sent' | 'scheduled' | 'failed' | 'draft' | 'partial';
   sent_at?: string;
   scheduled_at?: string;
   created_at: string;
@@ -90,7 +98,7 @@ const EmailManagement: React.FC = () => {
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
-  const [uploadedFile, setUploadedFile] = useState<DriveFile | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<FileAttachment | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [filterClass, setFilterClass] = useState<string>('all');
@@ -103,7 +111,6 @@ const EmailManagement: React.FC = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   useEffect(() => {
-    // Initialize EmailJS
     emailjs.init(EMAIL_CONFIG.publicKey);
     fetchStudents();
     fetchEmailHistory();
@@ -146,7 +153,6 @@ const EmailManagement: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file size (100MB max)
     if (file.size > 100 * 1024 * 1024) {
       toast({
         title: "File too large",
@@ -162,27 +168,28 @@ const EmailManagement: React.FC = () => {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('/api/upload-to-drive', {
+      const response = await fetch(`${SERVER_URL}/api/upload-to-drive`, {
         method: 'POST',
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
       }
 
-      const result: DriveFile = await response.json();
+      const result: FileAttachment = await response.json();
       setUploadedFile(result);
 
       toast({
-        title: "Success",
-        description: `File uploaded: ${result.fileName}`,
+        title: "✅ Upload Successful",
+        description: `${result.fileName} uploaded to server`,
       });
     } catch (error) {
       console.error('Upload error:', error);
       toast({
         title: "Upload failed",
-        description: "Failed to upload file to Google Drive",
+        description: error.message || "Failed to upload file",
         variant: "destructive"
       });
     } finally {
@@ -190,12 +197,27 @@ const EmailManagement: React.FC = () => {
     }
   };
 
-  const handleRemoveFile = () => {
-    setUploadedFile(null);
-    toast({
-      title: "File removed",
-      description: "Attachment has been removed",
-    });
+  const handleRemoveFile = async () => {
+    if (!uploadedFile) return;
+
+    try {
+      // Optional: Delete file from server
+      const response = await fetch(`${SERVER_URL}/api/delete-file/${uploadedFile.savedFileName}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        toast({
+          title: "File removed",
+          description: "Attachment has been removed from server",
+        });
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      // Still remove from UI even if server delete fails
+    } finally {
+      setUploadedFile(null);
+    }
   };
 
   const getFilteredStudents = () => {
@@ -261,8 +283,12 @@ const EmailManagement: React.FC = () => {
       // Prepare message with attachment link
       let emailMessage = message;
       if (uploadedFile) {
-        emailMessage += `\n\n📎 Attachment: ${uploadedFile.fileName}\n`;
-        emailMessage += `View/Download: ${uploadedFile.viewUrl}`;
+        emailMessage += `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        emailMessage += `📎 ATTACHMENT\n\n`;
+        emailMessage += `File: ${uploadedFile.fileName}\n`;
+        emailMessage += `Size: ${formatFileSize(uploadedFile.size)}\n\n`;
+        emailMessage += `🔗 View/Download:\n${uploadedFile.downloadUrl}\n`;
+        emailMessage += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
       }
 
       for (const student of recipients) {
@@ -287,7 +313,6 @@ const EmailManagement: React.FC = () => {
             failCount++;
           }
 
-          // Add delay between emails
           await new Promise(resolve => setTimeout(resolve, 1000));
         } catch (error) {
           console.error(`Failed to send to ${student.email}:`, error);
@@ -301,17 +326,24 @@ const EmailManagement: React.FC = () => {
         message: emailMessage,
         recipients: recipients.map(r => r.email),
         attachment: uploadedFile,
+        attachment_path: uploadedFile?.filePath || null,
         status: successCount > 0 ? (failCount > 0 ? 'partial' : 'sent') : 'failed',
         sent_at: new Date().toISOString(),
         sent_by: localStorage.getItem('userData') ? JSON.parse(localStorage.getItem('userData')!).name : 'Admin',
         created_at: new Date().toISOString()
       };
 
-      await supabase.from('email_history').insert(emailRecord);
+      const { error: insertError } = await supabase
+        .from('email_history')
+        .insert(emailRecord);
+
+      if (insertError) {
+        console.error('Error saving to history:', insertError);
+      }
 
       toast({
-        title: "Email sent",
-        description: `Sent to ${successCount} of ${recipients.length} recipients`,
+        title: "✅ Email sent successfully",
+        description: `Delivered to ${successCount} of ${recipients.length} recipients`,
       });
 
       // Reset form
@@ -365,6 +397,8 @@ const EmailManagement: React.FC = () => {
         return <CheckCircle className="w-5 h-5 text-green-500" />;
       case 'failed':
         return <XCircle className="w-5 h-5 text-red-500" />;
+      case 'partial':
+        return <AlertCircle className="w-5 h-5 text-yellow-500" />;
       case 'scheduled':
         return <Clock className="w-5 h-5 text-blue-500" />;
       default:
@@ -379,7 +413,7 @@ const EmailManagement: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold text-gray-900">Email Management</h2>
-        <p className="text-gray-600 mt-1">Send emails to students with file attachments</p>
+        <p className="text-gray-600 mt-1">Send emails with file attachments</p>
       </div>
 
       <Tabs defaultValue="compose" className="w-full">
@@ -388,9 +422,7 @@ const EmailManagement: React.FC = () => {
           <TabsTrigger value="history">Email History</TabsTrigger>
         </TabsList>
 
-        {/* Compose Tab */}
         <TabsContent value="compose" className="space-y-6">
-          {/* Recipient Selection */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -402,7 +434,6 @@ const EmailManagement: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Filters */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Select value={filterClass} onValueChange={setFilterClass}>
                   <SelectTrigger>
@@ -438,7 +469,6 @@ const EmailManagement: React.FC = () => {
                 </div>
               </div>
 
-              {/* Student List */}
               <div className="border rounded-lg max-h-64 overflow-y-auto">
                 {filteredStudents.map(student => (
                   <div
@@ -468,7 +498,6 @@ const EmailManagement: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Email Composer */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -477,7 +506,6 @@ const EmailManagement: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Subject */}
               <div>
                 <label className="block text-sm font-medium mb-2">Subject *</label>
                 <Input
@@ -487,7 +515,6 @@ const EmailManagement: React.FC = () => {
                 />
               </div>
 
-              {/* Message */}
               <div>
                 <label className="block text-sm font-medium mb-2">Message *</label>
                 <Textarea
@@ -498,40 +525,51 @@ const EmailManagement: React.FC = () => {
                 />
               </div>
 
-              {/* File Upload */}
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  Attachment (Upload to Google Drive)
+                  Attachment (Stored on Server)
                 </label>
                 {uploadedFile ? (
-                  <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg">
-                    {getFileIcon(uploadedFile.mimeType)}
-                    <div className="flex-1">
-                      <p className="font-medium">{uploadedFile.fileName}</p>
-                      <p className="text-sm text-gray-600">{formatFileSize(uploadedFile.size)}</p>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+                      {getFileIcon(uploadedFile.mimeType)}
+                      <div className="flex-1">
+                        <p className="font-medium text-green-900">{uploadedFile.fileName}</p>
+                        <p className="text-sm text-green-700">{formatFileSize(uploadedFile.size)}</p>
+                        <p className="text-xs text-gray-500 mt-1">Saved as: {uploadedFile.savedFileName}</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => window.open(uploadedFile.viewUrl, '_blank')}
+                        className="text-green-700 hover:text-green-900"
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        View
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRemoveFile}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => window.open(uploadedFile.viewUrl, '_blank')}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleRemoveFile}
-                      className="text-red-600"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <LinkIcon className="w-4 h-4 text-blue-600 mt-0.5" />
+                      <div className="flex-1 text-sm">
+                        <p className="font-medium text-blue-900 mb-1">Download link (will be sent in email):</p>
+                        <p className="text-blue-700 break-all font-mono text-xs">{uploadedFile.downloadUrl}</p>
+                      </div>
+                    </div>
                   </div>
                 ) : (
-                  <label className="flex items-center justify-center gap-3 p-6 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary hover:bg-gray-50">
+                  <label className="flex items-center justify-center gap-3 p-6 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary hover:bg-gray-50 transition-colors">
                     {isUploading ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
-                        <span>Uploading to Google Drive...</span>
+                        <span>Uploading to server...</span>
                       </>
                     ) : (
                       <>
@@ -541,55 +579,17 @@ const EmailManagement: React.FC = () => {
                           type="file"
                           onChange={handleFileUpload}
                           className="hidden"
-                          accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                          accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.txt"
                         />
                       </>
                     )}
                   </label>
                 )}
                 <p className="text-xs text-gray-500 mt-2">
-                  File will be uploaded to Google Drive and shared as a link
+                  ℹ️ File will be stored on the server with a unique ID to prevent duplicates
                 </p>
               </div>
 
-              {/* Schedule Option */}
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="schedule"
-                  checked={isScheduled}
-                  onChange={(e) => setIsScheduled(e.target.checked)}
-                  className="w-5 h-5"
-                />
-                <label htmlFor="schedule" className="text-sm font-medium flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  Schedule for later
-                </label>
-              </div>
-
-              {isScheduled && (
-                <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Date</label>
-                    <Input
-                      type="date"
-                      value={scheduleDate}
-                      onChange={(e) => setScheduleDate(e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Time</label>
-                    <Input
-                      type="time"
-                      value={scheduleTime}
-                      onChange={(e) => setScheduleTime(e.target.value)}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Send Button */}
               <Button
                 onClick={sendEmail}
                 disabled={isSending || selectedCount === 0}
@@ -599,12 +599,12 @@ const EmailManagement: React.FC = () => {
                 {isSending ? (
                   <>
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Sending...
+                    Sending emails...
                   </>
                 ) : (
                   <>
-                    {isScheduled ? <Calendar className="w-5 h-5 mr-2" /> : <Send className="w-5 h-5 mr-2" />}
-                    {isScheduled ? 'Schedule Email' : `Send to ${selectedCount} Recipients`}
+                    <Send className="w-5 h-5 mr-2" />
+                    Send to {selectedCount} Recipients
                   </>
                 )}
               </Button>
@@ -612,56 +612,58 @@ const EmailManagement: React.FC = () => {
           </Card>
         </TabsContent>
 
-        {/* History Tab */}
         <TabsContent value="history">
           <Card>
             <CardHeader>
               <CardTitle>Email History</CardTitle>
-              <CardDescription>View all sent and scheduled emails</CardDescription>
+              <CardDescription>View all sent emails with attachments</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {emailHistory.map(email => (
-                  <div
-                    key={email.id}
-                    className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                    onClick={() => {
-                      setSelectedEmail(email);
-                      setIsDetailOpen(true);
-                    }}
-                  >
-                    <div className="flex items-start gap-3 flex-1">
-                      {getStatusIcon(email.status)}
-                      <div className="flex-1">
-                        <h3 className="font-medium">{email.subject}</h3>
-                        <p className="text-sm text-gray-600 line-clamp-2">{email.message}</p>
-                        <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                          <span>{email.recipients.length} recipients</span>
-                          <span>{formatDate(email.created_at)}</span>
-                          <span>By: {email.sent_by}</span>
-                          {email.attachment && (
-                            <span className="flex items-center gap-1">
-                              <Paperclip className="w-3 h-3" />
-                              {email.attachment.fileName}
-                            </span>
-                          )}
+                {emailHistory.length === 0 ? (
+                  <p className="text-center text-gray-500 py-8">No emails sent yet</p>
+                ) : (
+                  emailHistory.map(email => (
+                    <div
+                      key={email.id}
+                      className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                      onClick={() => {
+                        setSelectedEmail(email);
+                        setIsDetailOpen(true);
+                      }}
+                    >
+                      <div className="flex items-start gap-3 flex-1">
+                        {getStatusIcon(email.status)}
+                        <div className="flex-1">
+                          <h3 className="font-medium">{email.subject}</h3>
+                          <p className="text-sm text-gray-600 line-clamp-2">{email.message}</p>
+                          <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                            <span>{email.recipients.length} recipients</span>
+                            <span>{formatDate(email.created_at)}</span>
+                            <span>By: {email.sent_by}</span>
+                            {email.attachment && (
+                              <span className="flex items-center gap-1 text-blue-600">
+                                <Paperclip className="w-3 h-3" />
+                                {email.attachment.fileName}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
+                      <Badge variant={email.status === 'sent' ? 'default' : email.status === 'partial' ? 'secondary' : 'destructive'}>
+                        {email.status}
+                      </Badge>
                     </div>
-                    <Badge variant={email.status === 'sent' ? 'default' : 'secondary'}>
-                      {email.status}
-                    </Badge>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
 
-      {/* Email Detail Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Email Details</DialogTitle>
           </DialogHeader>
@@ -686,20 +688,36 @@ const EmailManagement: React.FC = () => {
               {selectedEmail.attachment && (
                 <div>
                   <p className="text-sm font-medium text-gray-500 mb-2">Attachment</p>
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    {getFileIcon(selectedEmail.attachment.mimeType)}
-                    <div className="flex-1">
-                      <p className="font-medium">{selectedEmail.attachment.fileName}</p>
-                      <p className="text-sm text-gray-600">{formatFileSize(selectedEmail.attachment.size)}</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border">
+                      {getFileIcon(selectedEmail.attachment.mimeType)}
+                      <div className="flex-1">
+                        <p className="font-medium">{selectedEmail.attachment.fileName}</p>
+                        <p className="text-sm text-gray-600">{formatFileSize(selectedEmail.attachment.size)}</p>
+                        {selectedEmail.attachment_path && (
+                          <p className="text-xs text-gray-400 mt-1">Path: {selectedEmail.attachment_path}</p>
+                        )}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(selectedEmail.attachment!.downloadUrl, '_blank')}
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Download
+                      </Button>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(selectedEmail.attachment!.viewUrl, '_blank')}
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      View/Download
-                    </Button>
+                    <div className="flex items-start gap-2 p-2 bg-blue-50 rounded text-xs">
+                      <LinkIcon className="w-3 h-3 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <a 
+                        href={selectedEmail.attachment.downloadUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-700 hover:underline break-all font-mono"
+                      >
+                        {selectedEmail.attachment.downloadUrl}
+                      </a>
+                    </div>
                   </div>
                 </div>
               )}

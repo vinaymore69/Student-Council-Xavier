@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
-import { Mail, Phone, MapPin, Clock } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, Group } from "lucide-react";
+import { group } from "console";
 
 const InfoCard = ({ icon: Icon, title, content, details, index }) => {
   const cardRef = useRef(null);
@@ -53,25 +54,25 @@ const ContactInfo = () => {
     {
       icon: Mail,
       title: "Email Us",
-      content: "support@atlasrobotics.com",
+      content: "student.council.xavier.tech.nova@gmail.com",
       details: "We'll respond within 24 hours"
     },
     {
       icon: Phone,
       title: "Call Us",
-      content: "+1 (555) 123-4567",
-      details: "Mon-Fri from 9am to 6pm PST"
+      content: "+91 98679 98799",
+      details: "Mon-Fri from 9am to 5pm IST"
     },
     {
       icon: MapPin,
       title: "Visit Us",
-      content: "123 Innovation Drive, Tech Valley, CA 94000",
-      details: "United States"
+      content: "Xavier Institue Of Engineering, Mumbai",
+      details: "Mumbai, Maharashtra, India"
     },
     {
-      icon: Clock,
-      title: "Business Hours",
-      content: "Monday - Friday: 9:00 AM - 6:00 PM",
+      icon: Group,
+      title: "Student Council",
+      content: "Monday - Friday: 9:00 AM - 5:00 PM",
       details: "Saturday - Sunday: Closed"
     }
   ];

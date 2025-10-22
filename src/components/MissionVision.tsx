@@ -32,12 +32,12 @@ const MissionVision = () => {
             
             <div className="bg-white p-6 sm:p-8" style={{ border: "1px solid #ECECEC" }}>
               <p className="text-gray-700 text-base sm:text-lg leading-relaxed mb-4">
-                To democratize advanced robotics and AI technology, making it accessible, 
-                intuitive, and beneficial for everyone.
+                To represent every student's voice, organize memorable events, and foster a 
+                vibrant campus community where everyone feels valued and heard.
               </p>
               <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
-                We believe that the future of work isn't about automation replacing humans—it's 
-                about creating intelligent tools that amplify human creativity, productivity, and potential.
+                We believe that student life isn't just about academics—it's about creating 
+                connections, discovering passions, and developing leadership skills that last a lifetime.
               </p>
             </div>
           </div>
@@ -60,12 +60,12 @@ const MissionVision = () => {
             
             <div className="bg-white p-6 sm:p-8" style={{ border: "1px solid #ECECEC" }}>
               <p className="text-gray-700 text-base sm:text-lg leading-relaxed mb-4">
-                A world where humanoid robots are seamless partners in homes, workplaces, 
-                and communities around the globe.
+                A campus where students are empowered leaders, active participants, and 
+                proud ambassadors of Xavier Institute of Engineering.
               </p>
               <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
-                We envision a future where technology adapts to human needs, not the other way around. 
-                Where every interaction feels natural, intuitive, and genuinely helpful.
+                We envision a future where every student has the opportunity to lead, create, 
+                and contribute to making our campus the best place to learn and grow.
               </p>
             </div>
           </div>

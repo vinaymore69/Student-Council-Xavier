@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { X, ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, ZoomIn, Download, Share2 } from "lucide-react";
 
 interface Event {
-  id: number;
+  id: string;
   title: string;
   date: string;
   category: string;
   gallery: string[];
+  location?: string;
+  time?: string;
 }
 
 interface EventGalleryModalProps {
@@ -17,6 +19,7 @@ interface EventGalleryModalProps {
 const EventGalleryModal: React.FC<EventGalleryModalProps> = ({ event, onClose }) => {
   const [selectedImage, setSelectedImage] = useState<number>(0);
   const [isZoomed, setIsZoomed] = useState<boolean>(false);
+  const [imageLoaded, setImageLoaded] = useState<boolean>(false);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -28,11 +31,13 @@ const EventGalleryModal: React.FC<EventGalleryModalProps> = ({ event, onClose })
   const nextImage = () => {
     setSelectedImage((prev) => (prev + 1) % event.gallery.length);
     setIsZoomed(false);
+    setImageLoaded(false);
   };
 
   const prevImage = () => {
     setSelectedImage((prev) => (prev - 1 + event.gallery.length) % event.gallery.length);
     setIsZoomed(false);
+    setImageLoaded(false);
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
@@ -46,6 +51,29 @@ const EventGalleryModal: React.FC<EventGalleryModalProps> = ({ event, onClose })
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  const handleDownload = () => {
+    const link = document.createElement('a');
+    link.href = event.gallery[selectedImage];
+    link.download = `${event.title}-image-${selectedImage + 1}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: event.title,
+          text: `Check out this photo from ${event.title}`,
+          url: window.location.href
+        });
+      } catch (err) {
+        console.log('Error sharing:', err);
+      }
+    }
+  };
+
   return (
     <div 
       className="fixed inset-0 z-50 bg-black/98 animate-fade-in"
@@ -57,10 +85,22 @@ const EventGalleryModal: React.FC<EventGalleryModalProps> = ({ event, onClose })
           <h2 className="text-lg sm:text-2xl font-display font-bold text-white mb-1">
             {event.title}
           </h2>
-          <div className="flex items-center gap-3 text-white/70 text-sm">
+          <div className="flex items-center gap-3 text-white/70 text-sm flex-wrap">
             <span>{event.category} Event</span>
             <span>•</span>
             <span>{event.date}</span>
+            {event.time && (
+              <>
+                <span>•</span>
+                <span>{event.time}</span>
+              </>
+            )}
+            {event.location && (
+              <>
+                <span>•</span>
+                <span className="truncate max-w-[200px]">{event.location}</span>
+              </>
+            )}
             <span>•</span>
             <span>{event.gallery.length} Photos</span>
           </div>
@@ -70,15 +110,39 @@ const EventGalleryModal: React.FC<EventGalleryModalProps> = ({ event, onClose })
           <button
             onClick={(e) => {
               e.stopPropagation();
+              handleDownload();
+            }}
+            className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors duration-300"
+            title="Download Image"
+          >
+            <Download className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+          </button>
+          {navigator.share && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleShare();
+              }}
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors duration-300"
+              title="Share"
+            >
+              <Share2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            </button>
+          )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
               setIsZoomed(!isZoomed);
             }}
             className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors duration-300"
+            title="Zoom"
           >
             <ZoomIn className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </button>
           <button
             onClick={onClose}
             className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors duration-300"
+            title="Close"
           >
             <X className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </button>
@@ -91,14 +155,25 @@ const EventGalleryModal: React.FC<EventGalleryModalProps> = ({ event, onClose })
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative max-w-7xl w-full h-full flex items-center justify-center">
+          {!imageLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+            </div>
+          )}
           <img 
             src={event.gallery[selectedImage]} 
             alt={`${event.title} - Image ${selectedImage + 1}`}
             className={`
-              max-w-full max-h-full object-contain rounded-2xl shadow-2xl transition-transform duration-300
+              max-w-full max-h-full object-contain rounded-2xl shadow-2xl transition-all duration-300
               ${isZoomed ? 'scale-150 cursor-zoom-out' : 'cursor-zoom-in'}
+              ${imageLoaded ? 'opacity-100' : 'opacity-0'}
             `}
             onClick={() => setIsZoomed(!isZoomed)}
+            onLoad={() => setImageLoaded(true)}
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/placeholder-event.jpg';
+              setImageLoaded(true);
+            }}
           />
 
           {/* Navigation Arrows */}
@@ -141,6 +216,7 @@ const EventGalleryModal: React.FC<EventGalleryModalProps> = ({ event, onClose })
               onClick={() => {
                 setSelectedImage(index);
                 setIsZoomed(false);
+                setImageLoaded(false);
               }}
               className={`
                 relative flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-lg overflow-hidden 
@@ -155,6 +231,9 @@ const EventGalleryModal: React.FC<EventGalleryModalProps> = ({ event, onClose })
                 src={img} 
                 alt={`Thumbnail ${index + 1}`}
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/placeholder-event.jpg';
+                }}
               />
               {selectedImage === index && (
                 <div className="absolute inset-0 bg-pulse-500/20"></div>

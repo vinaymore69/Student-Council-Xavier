@@ -26,9 +26,9 @@ const ContactCTA = () => {
                 </p>
                 
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <a href="tel:+15551234567">
+                  <a href="tel:++919867998799">
                     <button className="w-full sm:w-auto px-8 py-4 bg-white text-pulse-500 font-semibold rounded-full hover:bg-gray-100 transition-colors duration-300 shadow-lg">
-                      Call Now: +1 (555) 123-4567
+                      Call Now: +91 98679 98799
                     </button>
                   </a>
                   <a href="#contact-form">

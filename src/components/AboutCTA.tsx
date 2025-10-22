@@ -18,21 +18,21 @@ const AboutCTA = () => {
             
             <div className="relative z-10">
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-display font-bold text-white mb-4 sm:mb-6">
-                Ready to Experience the Future?
+                Ready to Make a Difference?
               </h2>
               <p className="text-lg sm:text-xl text-white/90 mb-8 sm:mb-10 max-w-2xl mx-auto">
-                Join thousands of innovators already transforming their operations with Atlas.
+                Join the Student Council and help shape the future of campus life at Xavier Institute of Engineering.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <Link to="/signup">
+                <Link to="/#details">
                   <button className="w-full sm:w-auto px-8 py-4 bg-white text-pulse-500 font-semibold rounded-full hover:bg-gray-100 transition-colors duration-300 shadow-lg">
-                    Get Started Today
+                    Join Our Team
                   </button>
                 </Link>
                 <Link to="/contact">
                   <button className="w-full sm:w-auto px-8 py-4 border-2 border-white text-white font-semibold rounded-full hover:bg-white/10 transition-colors duration-300">
-                    Contact Sales
+                    Contact Us
                   </button>
                 </Link>
               </div>
