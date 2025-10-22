@@ -181,8 +181,8 @@ const AdminDashboard: React.FC = () => {
               {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </Button>
             <Link to="/" className="flex items-center gap-2">
-              <img src="/logo.svg" alt="Logo" className="h-8" />
-              <h1 className="text-xl font-bold hidden sm:block">Admin Panel</h1>
+              <img src="/xiesc.png" alt="Logo" className="h-16" />
+              {/* <h1 className="text-xl font-bold hidden sm:block">Admin Panel</h1> */}
             </Link>
           </div>
 
@@ -208,7 +208,7 @@ const AdminDashboard: React.FC = () => {
                 </span>
               )}
             </Button>
-            <div className="flex items-center gap-2 pl-4 border-l">
+            <div className="flex items-center gap-2 pl-4 mr-2 border-l">
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
                 {adminData.name?.charAt(0).toUpperCase()}
               </div>
