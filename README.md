@@ -2,6 +2,8 @@
 
 <div align="center">
 
+![XIE Banner](public/images/banner.png)
+
 ![XIE Logo](https://img.shields.io/badge/XIE-Student%20Council-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)
 ![Node](https://img.shields.io/badge/Node.js-18+-green?style=for-the-badge&logo=node.js)
@@ -40,6 +42,10 @@
 
 ## 🎯 Overview
 
+<div align="center">
+  <img src="public/images/overview.png" alt="Platform Overview" width="800px" />
+</div>
+
 The **XIE Student Council Web Platform** is a proprietary, full-featured web application designed exclusively for Xavier Institute of Engineering's student council to manage and showcase all college fests, events, winners, and communications in a centralized, efficient manner.
 
 ### Purpose
@@ -57,7 +63,13 @@ It automates medal tallying, maintains department standings, facilitates officia
 
 ### 🏆 For Students & Visitors
 
-#### Event Discovery
+<div class="grid grid-cols-2 gap-4">
+  <img src="public/images/features/event-discovery.png" alt="Event Discovery" />
+  <img src="public/images/features/winners.png" alt="Winners & Recognition" />
+  <img src="public/images/features/leaderboard.png" alt="Rankings & Leaderboards" />
+  <img src="public/images/features/gallery.png" alt="Gallery & Highlights" />
+</div>
+
 - Browse all events across Spandan, Transmission, and Sparx fests
 - View detailed event information, rules, and schedules
 - Search and filter events by fest, category, or date
@@ -91,6 +103,13 @@ It automates medal tallying, maintains department standings, facilitates officia
 ---
 
 ### 🔐 For Admins
+
+<div class="grid grid-cols-2 gap-4">
+  <img src="public/images/admin/dashboard.png" alt="Admin Dashboard" />
+  <img src="public/images/admin/event-management.png" alt="Event Management" />
+  <img src="public/images/admin/winner-management.png" alt="Winner Management" />
+  <img src="public/images/admin/email-system.png" alt="Email System" />
+</div>
 
 #### Fest & Event Management
 - Create, update, and delete fests
@@ -155,12 +174,12 @@ It automates medal tallying, maintains department standings, facilitates officia
 ```
 ├── React 18.2+ (with TypeScript)
 ├── Next.js 14+ (App Router)
-├── TailwindCSS 3.4+ (Styling)
-├── Shadcn/ui (Component Library)
+├── TailwindCSS 3.4+ with DaisyUI
+├── Shadcn/ui + RadixUI (Components)
 ├── Framer Motion (Animations)
-├── React Query (Data Fetching)
-├── Zustand (State Management)
-└── React Hook Form (Form Handling)
+├── React Query + SWR (Data Fetching)
+├── Zustand + Jotai (State Management)
+└── React Hook Form + Zod (Forms)
 ```
 
 ### Backend
@@ -203,6 +222,10 @@ It automates medal tallying, maintains department standings, facilitates officia
 
 ## 🏗 System Architecture
 
+<div align="center">
+  <img src="public/images/architecture.png" alt="System Architecture" width="800px" />
+</div>
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                        CLIENT LAYER                          │
@@ -238,7 +261,7 @@ It automates medal tallying, maintains department standings, facilitates officia
 │                      DATA LAYER                              │
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐           │
 │  │  Supabase  │  │   Google   │  │   Google   │           │
-│  │ PostgreSQL │  │   Drive    │  │   Sheets   │           │
+│  │ PostgreSQL │  │  Drive    │  │  Sheets   │           │
 │  │  Database  │  │  (Backup)  │  │  (Records) │           │
 │  └────────────┘  └────────────┘  └────────────┘           │
 └─────────────────────────────────────────────────────────────┘
@@ -260,10 +283,11 @@ User Action → Next.js API Route → Service Layer → Supabase Database
 Before installation, ensure you have the following:
 
 ### Required Software
-- **Node.js**: v18.0.0 or higher ([Download](https://nodejs.org/))
-- **npm**: v9.0.0 or higher (comes with Node.js)
+- **Node.js**: v20.0.0 or higher ([Download](https://nodejs.org/))
+- **npm**: v10.0.0 or higher (comes with Node.js)
+- **pnpm**: v8.0.0 or higher (recommended)
 - **Git**: Latest version ([Download](https://git-scm.com/))
-- **Modern Browser**: Chrome, Firefox, Safari, or Edge (latest versions)
+- **Docker**: Latest version (optional, for local development)
 
 ### Required Accounts & API Keys
 
@@ -859,6 +883,16 @@ const events = await response.json();
 3. Choose items to restore
 4. Confirm restoration
 ```
+
+---
+
+## 📱 Mobile Views
+
+<div class="grid grid-cols-3 gap-4">
+  <img src="public/images/mobile/home.png" alt="Mobile Home" width="200px" />
+  <img src="public/images/mobile/events.png" alt="Mobile Events" width="200px" />
+  <img src="public/images/mobile/winners.png" alt="Mobile Winners" width="200px" />
+</div>
 
 ---
 
