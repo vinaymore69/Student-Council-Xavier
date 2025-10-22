@@ -1,0 +1,15 @@
+# Allow all search engines to crawl the site
+User-agent: *
+Allow: /
+
+# Disallow admin and authentication pages
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /student-dashboard
+Disallow: /student-dashboard/*
+Disallow: /login
+Disallow: /signup
+Disallow: /auth/
+
+# Sitemap location
+Sitemap: https://xiestudentcouncil.com/sitemap.xml
