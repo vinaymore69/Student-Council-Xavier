@@ -197,7 +197,7 @@ const Navbar = () => {
           <Link to="/chat" className="nav-link">AI Chat</Link>
           <Link to="/gallery" className="nav-link">Gallery</Link>
           <Link to="/rankings" className="nav-link">Rankings</Link>
-
+<Link to="/events" className="nav-link">Events</Link>
           {/* If user is not signed in show Login / Sign Up */}
           {!userRole && (
             <>

@@ -14,12 +14,13 @@ import EmailPage from "./pages/EmailPage";
 import AuthCallback from "./pages/AuthCallback";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
-import StudentDashboard from "./pages/StudentDashboard"; // Already imported ✓
+import StudentDashboard from "./pages/StudentDashboard"; 
 import ProtectedRoute from "./components/ProtectedRoute";
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
 import TermsOfService from '@/pages/TermsOfService';
 import CookiePolicy from '@/pages/CookiePolicy';
 import Rankings from '@/pages/Rankings';
+import Events from './pages/Events';
 
 const queryClient = new QueryClient();
 
@@ -41,7 +42,7 @@ const App = () => (
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/cookies" element={<CookiePolicy />} />
-
+          <Route path="/events" element={<Events />} />
           {/* Auth Callback Route */}
           <Route path="/auth/callback" element={<AuthCallback />} />
           
